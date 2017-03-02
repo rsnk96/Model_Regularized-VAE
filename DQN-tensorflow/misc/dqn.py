@@ -23,15 +23,15 @@ class DQN(object):
         self.weights['conv1_w'] = getWeight([8, 8, 4, 32])
         self.weights['conv1_b'] = getWeight([32])
         conv1 = tf.nn.relu(tf.nn.conv2d(self.phi, self.weights['conv1_w'], \
-                strides=[1, 4, 4, 1], padding = 'VALID') \ 
-                + self.weights['conv1_b'])
+                strides=[1, 4, 4, 1], padding = 'VALID') \
+                 + self.weights['conv1_b'])
         self.conv1 = conv1
 
         # Convolution layer 2
         self.weights['conv2_w'] = getWeight([4, 4, 32, 64])
         self.weights['conv2_b'] = getWeight([64])
         conv2 = tf.nn.relu(tf.nn.conv2d(conv1, self.weights['conv2_w'], \
-                strides=[1, 2, 2, 1], padding = 'VALID') \ 
+                strides=[1, 2, 2, 1], padding = 'VALID') \
                 + self.weights['conv2_b'])
         self.conv2 = conv2
 
@@ -61,8 +61,8 @@ class DQN(object):
         # Action selection
         self.action_selection = tf.argmax(fc2, axis=1)
 		
-		# Action value selection
-		self.action_value_selection = tf.reduce_max(fc2, axis=1)
+        # Action value selection
+        self.action_value_selection = tf.reduce_max(fc2, axis=1)
 
         # Loss computation given target, states, actions
         self.loss = tf.square(tf.clip_by_value(self.target - tf.gather(fc2, self.input_actions), -1, 1))
@@ -74,10 +74,9 @@ class DQN(object):
     	return sess.run(self.action_value_selection, {self.phi:state})
 
     def createOptimizer(self, params):
-    	lr = params['learning_rate']
-    	mom = params['alpha']
-		eps = params['epsilon']
-
-		self.optimizer = tf.train.RMSPropOptimizer(lr, momentum=mom, epsilon=eps)
-		self.optimize = self.optimizer.minimize(self.loss)
+        lr = params['learning_rate']
+        mom = params['alpha']
+        eps = params['epsilon']
+        self.optimizer = tf.train.RMSPropOptimizer(lr, momentum=mom, epsilon=eps)
+        self.optimize = self.optimizer.minimize(self.loss)
 

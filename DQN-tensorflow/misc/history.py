@@ -17,7 +17,7 @@ class history(object):
 		else:
 			raise "Invalid image format! Must be NHWC or NCWH"
 
-	def update(frame):
+	def update(self, frame):
 		if self.image_format == 'NHWC':
 			self.history[:,:,0:3] = self.history[:,:,1:4].copy()
 			self.history[:,:,3] = frame.copy()
@@ -25,7 +25,7 @@ class history(object):
 			self.history[0:3,:,:] = self.history[1:4,:,:].copy()
 			self.history[3,:,:] = frame.copy()
 	
-	def reset(frame):
+	def reset(self, frame):
 		self.start_frame = frame
 		if self.image_format == 'NHWC':
 			self.history = np.repeat(np.reshape(self.start_frame, [self.H, self.W, 1]), self.history_length, 2)
