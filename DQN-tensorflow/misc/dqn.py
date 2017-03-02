@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 def getWeight(shape):
     return tf.Variable(tf.random_uniform(shape, minval=-0.08, maxval=0.08, dtype=tf.float32))
@@ -11,7 +12,8 @@ class DQN(object):
     def __init__(self, params):
         self.nActions = params['nActions']
         self.phi = tf.placeholder(tf.float32, shape=[None, 84, 84, 4])
-        self.target = tf.placeholder(tf.float32, shape=[None, self.nActions])
+        self.target = tf.placeholder(tf.float32, shape=[None])
+        self.input_actions = tf.placeholder(tf.int32, shape=[None])
         self.weights = {}
         self.createLayers()
 		
@@ -54,3 +56,28 @@ class DQN(object):
         self.weights['fc2_w'] = getWeight([512, self.nActions])
         self.weights['fc2_b'] = getBias([self.nActions])
         fc2 = tf.matmul(fc1, self.weights['fc2_w']) + self.weights['fc2_b']
+        self.fc2 = fc2
+
+        # Action selection
+        self.action_selection = tf.argmax(fc2, axis=1)
+		
+		# Action value selection
+		self.action_value_selection = tf.reduce_max(fc2, axis=1)
+
+        # Loss computation given target, states, actions
+        self.loss = tf.square(tf.clip_by_value(self.target - tf.gather(fc2, self.input_actions), -1, 1))
+	
+    def getAction(self, sess, state):
+        return sess.run(self.action_selection, {self.phi:state})
+
+    def getMaxActionValue(self, sess, state):
+    	return sess.run(self.action_value_selection, {self.phi:state})
+
+    def createOptimizer(self, params):
+    	lr = params['learning_rate']
+    	mom = params['alpha']
+		eps = params['epsilon']
+
+		self.optimizer = tf.train.RMSPropOptimizer(lr, momentum=mom, epsilon=eps)
+		self.optimize = self.optimizer.minimize(self.loss)
+

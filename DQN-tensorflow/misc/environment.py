@@ -24,12 +24,14 @@ class environment(object):
 			obs, self.reward, self.done, \
 					self.info = self.env.step(action)
 			self.state_history.update(toNatureDQNFormat(obs))
-	
+			
 	def take_random_step(self):
+		action = 0
 		if self.done == 0:
 			action = self.env.action_sample.sample()
 			obs, self.reward, done, info = env.step(action)
 			self.state_history.update(toNatureDQNFormat(obs))
+		return action
 
 	def reset_env(self):
 		obs = self.env.reset()
