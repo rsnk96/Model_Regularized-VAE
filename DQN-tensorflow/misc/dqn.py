@@ -6,7 +6,7 @@ def getWeight(shape):
 
 def getBias(shape):
     # Initialize biases as 0
-    return tf.Variable(tf.constant(0, shape=shape, dtype=tf.float32), dtype=tf.float32)
+    return tf.Variable(tf.constant(0.1, shape=shape, dtype=tf.float32), dtype=tf.float32)
 
 class DQN(object):
     def __init__(self, params):

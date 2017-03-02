@@ -7,7 +7,7 @@ from misc.utils import toNatureDQNFormat
 from misc.environment import environment
 from misc.replay_memory import memory_element
 from misc.replay_memory import replay_memory
-
+import math
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -72,6 +72,7 @@ except AttributeError:
 
 # Copy weights to target network
 copy_network(sess)
+max_return = 0
 
 for iters in range(1, cmd_params['total_frames']+1):
     # state before taking action s_{t}
@@ -81,22 +82,26 @@ for iters in range(1, cmd_params['total_frames']+1):
     s = env.state_history.history
     if rn.random() < epsilon:
         action_taken = env.take_random_step()
+        if iters%10 == 0:
+            print('Random action: %d taken!'%(action_taken))
     else:
         action_taken = dqn_s.getAction(sess, np.reshape(s, [1]+shape))[0]
-    env.take_step(action_taken)
-    replay.add_transition(s, action_taken, env.reward, env.state_history.history, env.done)
-    
+        env.take_step(action_taken)
 
+    replay.add_transition(s, action_taken, env.reward, env.state_history.history, env.done)
+   
+    max_return = max(env.total_reward, max_return)
     if iters >= cmd_params['start_training']:
         s, a, r, sp, t = replay.get_transitions(cmd_params['batch_size']) 
         qsp = dqn_t.getMaxActionValue(sess, sp)
         target = gamma*(1-t)*qsp + r
         _, loss = sess.run([dqn_s.optimize, dqn_s.loss] , {dqn_s.phi: s, \
                             dqn_s.target: target, dqn_s.input_actions: a})
-        if iters%1000 == 0:
-            print('Iteration #: %.8d , Loss: %.6f'%(iters, loss))
-    elif iters%1000 == 0:
-        print('Iteration #: %.8d'%(iters))
+        if iters%10 == 0:
+            print('Iter #: %.7d, Loss: %.3f, Max Return: %.2f, Action: %d, Reward: %.2f, eps: %.6f'%(iters, math.sqrt(loss), max_return, action_taken, env.reward, epsilon))
+    elif iters%10 == 0:
+        print('Iter #: %.7d, Max Return: %.2f, Action: %d, Reward: %.2f, eps: %.6f'%(iters, max_return, action_taken, env.reward, epsilon))
+
 
     if iters <= cmd_params['final_exploration_frame']:
         epsilon = epsilon + delta_epsilon

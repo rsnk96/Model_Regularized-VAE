@@ -1,7 +1,7 @@
 import gym
+import math
 from misc.utils import toNatureDQNFormat
 from misc.history import history
-import pdb
 
 class environment(object):
 
@@ -12,7 +12,7 @@ class environment(object):
         self.env = gym.make(self.game)
         self.nActions = self.env.action_space.n
         obs = self.env.reset()
-
+        self.total_reward = 0
         self.state_history = history({'history_length': self.history_length,\
                                       'image_format': self.image_format,\
                                       'start_frame': toNatureDQNFormat(obs)})
@@ -22,18 +22,31 @@ class environment(object):
     
     def take_step(self, action):
         if self.done == 0:
-            obs, self.reward, self.done, \
+            obs, reward, self.done, \
                     self.info = self.env.step(action)
             self.state_history.update(toNatureDQNFormat(obs))
+            # reward clipping
+            self.reward = max(min(1, reward), -1)
+            self.total_reward += reward
                     
     def take_random_step(self):
         action = 0
         if self.done == 0:
             action = self.env.action_space.sample()
-            obs, self.reward, done, info = self.env.step(action)
+            obs, reward, done, info = self.env.step(action)
             self.state_history.update(toNatureDQNFormat(obs))
+            # reward clipping
+            self.reward = max(min(1, reward), -1)
+            self.total_reward += reward
         return action
 
     def reset_env(self):
         obs = self.env.reset()
+        self.done = 0
+        self.total_reward = 0
+        self.reward = 0
+        self.info = 0
         self.state_history.reset(toNatureDQNFormat(obs))
+
+    def display_env(self):
+        self.env.render()
