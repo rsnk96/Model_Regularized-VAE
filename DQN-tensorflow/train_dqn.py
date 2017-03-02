@@ -93,14 +93,10 @@ for iters in range(1, cmd_params['total_frames']+1):
         target = gamma*(1-t)*qsp + r
         _, loss = sess.run([dqn_s.optimize, dqn_s.loss] , {dqn_s.phi: s, \
                             dqn_s.target: target, dqn_s.input_actions: a})
-            
         if iters%1000 == 0:
-            sys.stdout.write('Iteration #: %.8d , Loss: %.6f\r'%(iters, loss))
-            sys.stdout.flush()
-
+            print('Iteration #: %.8d , Loss: %.6f'%(iters, loss))
     elif iters%1000 == 0:
-        sys.stdout.write('Iteration #: %.8d\r'%(iters))
-        sys.stdout.flush()
+        print('Iteration #: %.8d'%(iters))
 
     if iters <= cmd_params['final_exploration_frame']:
         epsilon = epsilon + delta_epsilon

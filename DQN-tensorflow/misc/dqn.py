@@ -65,7 +65,9 @@ class DQN(object):
         self.action_value_selection = tf.reduce_max(fc2, axis=1)
 
         # Loss computation given target, states, actions
-        self.loss = tf.square(tf.clip_by_value(self.target - tf.gather(fc2, self.input_actions), -1, 1))
+        gather_index = tf.stack([tf.range(tf.shape(fc2)[0]),\
+                                 self.input_actions], axis=1)
+        self.loss = tf.reduce_mean(tf.square(tf.clip_by_value(self.target - tf.gather_nd(fc2, gather_index), -1, 1)))
 	
     def getAction(self, sess, state):
         return sess.run(self.action_selection, {self.phi:state})

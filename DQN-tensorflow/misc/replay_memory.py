@@ -27,7 +27,7 @@ class replay_memory(object):
             self.memory.pop(0)
         self.memory.append(memory_element(s, a, r, sp, done))
 
-    def get_transitions(batch_size):
+    def get_transitions(self, batch_size):
         #TODO: Make this more efficient
         sample_indices = rn.randint(0, len(self.memory), batch_size).tolist()
         states_t = np.zeros((batch_size, self.shape[0], \
@@ -38,7 +38,7 @@ class replay_memory(object):
         reward_t_1 = np.zeros((batch_size))
         terminated = np.zeros((batch_size))
 
-        for s in sample_indices:
+        for s in range(len(sample_indices)):
             curr_memory = self.memory[sample_indices[s]]
             states_t[s, :, :, :] = curr_memory.s
             states_t_1[s, :, :, :] = curr_memory.sp
