@@ -16,3 +16,8 @@ vae_gym/*.pkl
 vae_gym/*.pyc
 vae_gym/output
 test_images/
+
+vae_gym/color/*.pkl
+vae_gym/color/*.pyc
+vae_gym/color/output
+vae_gym/color/data
