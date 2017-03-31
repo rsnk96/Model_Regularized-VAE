@@ -21,3 +21,5 @@ vae_gym/color/*.pkl
 vae_gym/color/*.pyc
 vae_gym/color/output
 vae_gym/color/data
+
+VDQN/trained*
