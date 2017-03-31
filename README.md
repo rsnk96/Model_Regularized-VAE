@@ -45,3 +45,8 @@ Feb 10, 2017
   perform both these operations to generate an image "like" the given one.
 * beta_trainScriptClass_conditional.py adds visualization of latent
   features
+
+# VDQN
+Train a DQN with beta-VAE features fed through one dense decision layer and then a linear output layer for Q. Calling syntax
+
+    python2 run_nature.py --rom breakout --vae-file=/path/to/vae/checkpoint --vae-aux-file=/path/to/auxdata.pkl
