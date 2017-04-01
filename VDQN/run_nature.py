@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 """
 Execute a training run of deep-Q-Leaning with parameters that
 are consistent with:
