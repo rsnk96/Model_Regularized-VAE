@@ -98,19 +98,19 @@ class vae(object):
         self.gen_proj_b = getBias([self.fc_size])
         gen_proj = tf.matmul(self.z_sample, self.gen_proj_w) + self.gen_proj_b
         self.z_batch_size=tf.shape(self.z_sample)[0]
-        proj_reshaped = tf.nn.relu(tf.reshape(gen_proj, [self.z_batch_size, 39, 51, 32]))
+        proj_reshaped = tf.nn.relu(tf.reshape(gen_proj, [self.z_batch_size, 51, 39, 32]))
         # Transposed Convolution layer 1
         # Note: conv2d_transpose expects the filter size to be specified
         # as (height, width, OUT_channels, IN_channels)
 
         self.trans_conv_w_1 = getWeight([3, 3, 64, 32])
         self.trans_conv_b_1 = getBias([64])
-        trans_conv_1 = tf.nn.relu(tf.nn.conv2d_transpose(proj_reshaped, self.trans_conv_w_1, output_shape=[self.z_batch_size, 79, 104, 64], strides=[1, 2, 2, 1], padding='VALID') + self.trans_conv_b_1)
+        trans_conv_1 = tf.nn.relu(tf.nn.conv2d_transpose(proj_reshaped, self.trans_conv_w_1, output_shape=[self.z_batch_size, 104, 79, 64], strides=[1, 2, 2, 1], padding='VALID') + self.trans_conv_b_1)
 
         # Transposed Convolution layer 2
         self.trans_conv_w_2 = getWeight([4, 4, 3, 64])
         self.trans_conv_b_2 = getBias([3])
-        trans_conv_2 = tf.nn.conv2d_transpose(trans_conv_1, self.trans_conv_w_2, output_shape=[self.z_batch_size, 160, 210, 3], strides=[1, 2, 2, 1], padding='VALID')+self.trans_conv_b_2
+        trans_conv_2 = tf.nn.conv2d_transpose(trans_conv_1, self.trans_conv_w_2, output_shape=[self.z_batch_size, 210, 160, 3], strides=[1, 2, 2, 1], padding='VALID')+self.trans_conv_b_2
 
         # # Generated output
         self.output = tf.nn.sigmoid(trans_conv_2)

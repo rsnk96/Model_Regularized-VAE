@@ -1,4 +1,5 @@
 from __future__ import print_function
+import cv2
 import tensorflow as tf
 import pdb
 import numpy as np
@@ -14,7 +15,8 @@ from PIL import Image
 magic_seed_number = 74846
 
 def sample_batch(frameslist, perm, n=1) :
-	return [frameslist[perm[x]]/np.float32(255) for x in rn.choice(len(perm),n)]
+    return [np.array(frameslist[perm[x]], dtype=np.float)/np.float32(255) for x in rn.choice(len(perm),n)]
+    
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_file', default='data/breakout_frame_saver_test.pkl')
@@ -46,7 +48,7 @@ dump_path = commandline_params['dump_path']
 
 params = {}
 params['batch_size'] = commandline_params['batch_size']
-params['X_size'] = [160,210,3]
+params['X_size'] = [210,160,3]
 params['z_size'] = 30
 params['beta'] = commandline_params['beta']
 
@@ -77,24 +79,24 @@ pickle.dump(aux_data, open('%s/aux_data.pkl'%(dump_path), 'w'))
 for i in range(tr_iters):
     
     batch = sample_batch(frames, perm_train, params['batch_size'])
-    inputReshaped = [np.array(Image.fromarray(frame.astype('uint8')).resize((210,160),Image.BILINEAR)) for frame in batch]
+    inputReshaped = [cv2.resize(frame,(160,210)) for frame in batch]
 
     _, loss_val = sess.run([train_step, VAE.total_loss], \
                                feed_dict = {VAE.X_placeholder: inputReshaped})
     
-    # print('\n\n\n\n\n\nYOLOY', middle_output)
 
     if i % 10 == 0:
         print('Iteration %.4d  Train Loss: %6.3f'%(i+1, loss_val))
     
-    if (i+1) % 5000 == 0:
-        generated = VAE.generateSample(sess, n_samples=30)
+    if (i) % 1000 == 0:
+        generated = VAE.generateSample(sess, n_samples=params['batch_size'])
         os.system('mkdir -p %s/iter_%.6d'%(dump_path, i+1))
-        for im in range(30):
+        for im in range(params['batch_size']):
             reshaped_image = generated[im]
             reshaped_image = reshaped_image.reshape((210, 160,3))
             save_path = saver.save(sess, '%s/iter_%.6d/checkpoint.ckpt'%(dump_path, i+1))
             scipy.misc.toimage(reshaped_image, cmin=0.0, cmax=1.0).save('%s/iter_%.6d/img%.3d.png'%(dump_path, i+1, im))
-            #print('Saved model to %s'%(save_path))
+            # cv2.imwrite('%s/iter_%.6d/img%.3dOG.png'%(dump_path, i+1, im), inputReshaped[im])
+        print('Saved model to %s'%(save_path))
 os.system('mkdir -p %s/iter_%.6d'%(dump_path, i+1))        
 save_path = saver.save(sess, '%s/iter_%.6d/checkpoint.ckpt'%(dump_path, i+1))
