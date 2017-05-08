@@ -290,11 +290,15 @@ def launch(args, defaults, description):
                                               sess,
                                               defaults.VAE_REQ_STEPS,
                                               defaults.VAE_STORAGE_SIZE)
-    time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
+    time_str = time.strftime("%m-%d-%H-%M", time.gmtime())
     vae_save_path = '%s/%s_beta%f_z%d' % (defaults.VAE_OUT_PREFIX, rom.split('.')[0], params['beta'], params['z_size'])
     os.system('mkdir -p %s'%(vae_save_path) )
     experiment.run()
-    os.system('mkdir -p %s/%s_%s' % (vae_save_path, rom.split('.')[0], time_str))
+    ckpt_path = '%s/%s_%s' % (vae_save_path, rom.split('.')[0], time_str)
+    print ckpt_path
+    if not os.path.exists(ckpt_path):
+        os.makedirs(ckpt_path)
+    saver.save(sess,'%s/checkpoint.ckpt' % (ckpt_path))
 
 
 if __name__ == '__main__':

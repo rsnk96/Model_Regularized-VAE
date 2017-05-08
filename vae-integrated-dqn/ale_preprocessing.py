@@ -10,4 +10,4 @@ def pong_remove_score(obs):
     return obs
 
 def preproc_pong_noscore(imgs) :
-    return [pong_remove_score(np.concatenate(phi, axis=-1)) for phi in imgs]
+    return [pong_remove_score(np.concatenate(phi, axis=-1))/np.float32(255) for phi in imgs]

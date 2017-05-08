@@ -12,7 +12,7 @@ import pickle
 params = {}
 params['batch_size'] = 20
 params['X_size'] = [210,160,12]
-params['z_size'] = 5
+params['z_size'] = 10
 params['beta'] = 1
 params['learn_rate'] = 1e-4
 
