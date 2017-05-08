@@ -58,8 +58,12 @@ class Defaults:
     RESIZED_HEIGHT = 84
     DEATH_ENDS_EPISODE = 'true'
     MAX_START_NULLOPS = 30
-    DETERMINISTIC = True
+    DETERMINISTIC = False
     CUDNN_DETERMINISTIC = False
+
+    VAE_REQ_STEPS = 300
+    VAE_STORAGE_SIZE = 400000
+    VAE_OUT_PREFIX = 'vae_trained/'
 
 if __name__ == "__main__":
     launcher.launch(sys.argv[1:], Defaults, __doc__)

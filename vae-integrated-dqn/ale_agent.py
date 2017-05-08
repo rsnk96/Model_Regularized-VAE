@@ -44,10 +44,10 @@ class NeuralAgent(object):
                        "{}".format(self.network.lr).replace(".", "p") + "_" \
                        + "{}".format(self.network.discount).replace(".", "p")
 
-        try:
-            os.stat(self.exp_dir)
-        except OSError:
-            os.makedirs(self.exp_dir)
+        #try:
+        #    os.stat(self.exp_dir)
+        #except OSError:
+        #    os.makedirs(self.exp_dir)
 
         self.num_actions = self.network.num_actions
 
@@ -91,6 +91,7 @@ class NeuralAgent(object):
         self.steps_sec_ema = 0.
 
     def _open_results_file(self):
+        return
         logging.info("OPENING " + self.exp_dir + '/results.csv')
         self.results_file = open(self.exp_dir + '/results.csv', 'w', 0)
         self.results_file.write(\
@@ -98,11 +99,13 @@ class NeuralAgent(object):
         self.results_file.flush()
 
     def _open_learning_file(self):
+        return
         self.learning_file = open(self.exp_dir + '/learning.csv', 'w', 0)
         self.learning_file.write('mean_loss,epsilon\n')
         self.learning_file.flush()
 
     def _update_results_file(self, epoch, num_episodes, holdout_sum):
+        return
         out = "{},{},{},{},{}\n".format(epoch, num_episodes, self.total_reward,
                                         self.total_reward / float(num_episodes),
                                         holdout_sum)
@@ -110,6 +113,7 @@ class NeuralAgent(object):
         self.results_file.flush()
 
     def _update_learning_file(self):
+        return
         out = "{},{}\n".format(np.mean(self.loss_averages),
                                self.epsilon)
         self.learning_file.write(out)
@@ -276,6 +280,7 @@ class NeuralAgent(object):
 
 
     def finish_epoch(self, epoch):
+        return
         net_file = open(self.exp_dir + '/network_file_' + str(epoch) + \
                         '.pkl', 'w')
         cPickle.dump(self.network, net_file, -1)

@@ -10,6 +10,7 @@ import logging
 import ale_python_interface
 import cPickle
 import numpy as np
+import time
 
 import tensorflow as tf
 import betavae_color as vae
@@ -126,9 +127,9 @@ def process_args(args, defaults, description):
                         help='Pickle file containing trained net.')
     # Additions for VAE
     parser.add_argument('--vae-file', dest="vae_file", type=str, default=None,
-                        help='Tensorflow checkpoint with trained VAE.')
+                        help='Destination for Tensorflow checkpoint with trained VAE.')
     parser.add_argument('--vae-aux-file', dest="vae_aux_file", type=str, default=None,
-                        help='Auxiliary parameters file for VAE.')
+                        help='Auxiliary parameters file for VAE to use.')
 
     parser.add_argument('--death-ends-episode', dest="death_ends_episode",
                         type=str, default=defaults.DEATH_ENDS_EPISODE,
@@ -221,9 +222,6 @@ def launch(args, defaults, description):
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         # sess = tf.Session(config=config)
-
-        # config = tf.ConfigProto(
-        #     device_count={'GPU': 0}
         # )
 
         sess = tf.Session(config=config)
@@ -239,13 +237,6 @@ def launch(args, defaults, description):
             sess.run(tf.initialize_all_variables())
 
         saver = tf.train.Saver()
-        chkpt = tf.train.get_checkpoint_state(parameters.vae_file)
-
-
-        if chkpt and chkpt.model_checkpoint_path:
-            saver.restore(sess, chkpt.model_checkpoint_path)
-        else:
-            print 'No checkpoint found'
 
     import theano
     import ale_experiment
@@ -254,8 +245,8 @@ def launch(args, defaults, description):
     if parameters.cudnn_deterministic:
         theano.config.dnn.conv.algo_bwd = 'deterministic'
     if parameters.nn_file is None:
-        network = q_network.DeepQLearner(VAE.z_size,
-                                         1,
+        network = q_network.DeepQLearner(defaults.RESIZED_WIDTH,
+                                         defaults.RESIZED_HEIGHT,
                                          num_actions,
                                          parameters.phi_length,
                                          parameters.discount,
@@ -285,8 +276,8 @@ def launch(args, defaults, description):
                                   rng)
 
     experiment = ale_experiment.ALEExperiment(ale, agent,
-                                              VAE.X_size[1],
-                                              VAE.X_size[0],
+                                              defaults.RESIZED_WIDTH,
+                                              defaults.RESIZED_WIDTH,
                                               parameters.resize_method,
                                               parameters.epochs,
                                               parameters.steps_per_epoch,
@@ -296,11 +287,14 @@ def launch(args, defaults, description):
                                               parameters.max_start_nullops,
                                               rng,
                                               VAE,
-                                              sess)
-
-
+                                              sess,
+                                              defaults.VAE_REQ_STEPS,
+                                              defaults.VAE_STORAGE_SIZE)
+    time_str = time.strftime("_%m-%d-%H-%M_", time.gmtime())
+    vae_save_path = '%s/%s_beta%f_z%d' % (defaults.VAE_OUT_PREFIX, rom.split('.')[0], params['beta'], params['z_size'])
+    os.system('mkdir -p %s'%(vae_save_path) )
     experiment.run()
-
+    os.system('mkdir -p %s/%s_%s' % (vae_save_path, rom.split('.')[0], time_str))
 
 
 if __name__ == '__main__':

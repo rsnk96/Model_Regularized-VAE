@@ -146,11 +146,12 @@ class ALEExperiment(object):
         """
         # Add given observation to VAE storage
         self.VAE_data_set.add_sample(obs, terminal)
-        if self.total_steps >= self.vae_req_steps :
-            self.VAE.train(self.VAE_data_set.random_batch(self.VAE.params['batch_size']),self.sess)
+        if self.total_steps >= self.vae_req_steps:
+            print 'training vae'
+            loss = self.VAE.train(self.VAE_data_set.random_batch(self.VAE.batch_size_rec), self.sess)
             self.vae_trained_steps += 1
             if self.vae_trained_steps % 2000 == 0 :
-                print "VAE Training step %d"%(self.vae_trained_steps)
+                print "VAE Training step %d: Loss %f"%(self.vae_trained_steps, loss)
             if self.vae_trained_steps % 40000 == 0 :
                 saver = tf.train.Saver()
                 os.system('mkdir -p %s/iter_%.6d' % ('vae_temp/', self.vae_trained_steps ))
@@ -207,7 +208,10 @@ class ALEExperiment(object):
         index = self.buffer_count % self.buffer_length - 1
         max_image = np.maximum(self.screen_buffer[index, ...],
                                self.screen_buffer[index - 1, ...])
-        return self.resize_image(max_image)
+        obs_frame = self.resize_image(max_image)
+        obs_frame[obs_frame == 87] = 0
+        return obs_frame
+        #return self.resize_image(max_image)
 
     def resize_image(self, image):
         """ Appropriately resize a single image """

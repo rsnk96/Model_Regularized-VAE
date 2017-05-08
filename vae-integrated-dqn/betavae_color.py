@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+from ale_preprocessing import preproc_pong_noscore as raw_obs_preproc_fn
+
 
 def getWeight(shape):
     return tf.Variable(tf.random_uniform(shape, minval=-0.08, maxval=0.08, dtype=tf.float32))
@@ -18,12 +20,15 @@ class vae(object):
         self.X_size = params['X_size']
         self.z_size = params['z_size']
         self.beta = params['beta']
+        self.learn_rate = params['learn_rate']
+        self.batch_size_rec = params['batch_size']
         
     def _create_network_(self):
     
         self.X_placeholder = tf.placeholder(tf.float32,[None]+self.X_size)
-
-        self.fc_size = 32*20*20 # Size to flatten to after 2nd convolution 
+        first_layer_size = [np.floor((self.X_size[0] - 4) / 2 + 1), np.floor((self.X_size[1] - 4) / 2 + 1)]
+        second_layer_size = [np.floor((first_layer_size[0] - 3) / 2) + 1, np.floor((first_layer_size[1] - 3) / 2) + 1]
+        self.fc_size = int(32*second_layer_size[0]*second_layer_size[1]) # Size to flatten to after 2nd convolution
         self.batch_size = tf.shape(self.X_placeholder)[0]
         self.num_channels = 1#tf.shape(self.X_placeholder)[3]
         self.getEncoder()
@@ -33,6 +38,7 @@ class vae(object):
         self.getKLDLoss()
         # average the total loss over all samples
         self.total_loss = tf.reduce_mean(self.rec_loss + self.kl_loss)
+        self.train_step = tf.train.AdamOptimizer(self.learn_rate).minimize(self.total_loss)
 
     def generateSample(self, sess, n_samples=20):
         z_rng = np.random.normal(size=[n_samples, self.z_size])
@@ -59,7 +65,7 @@ class vae(object):
     def getEncoder(self):
             
         # Convolution layer 1
-        self.conv_w_1 = getWeight([4, 4, 3, 64])
+        self.conv_w_1 = getWeight([4, 4, self.X_size[2], 64])
         self.conv_b_1 = getBias([64])
         conv_1 = tf.nn.relu(tf.nn.conv2d(self.X_placeholder, self.conv_w_1, \
                      strides=[1, 2, 2, 1], padding='VALID') + self.conv_b_1)
@@ -91,25 +97,27 @@ class vae(object):
 
 
     def getGenerator(self):
+        first_layer_size = [np.floor((self.X_size[0]-4)/2+1), np.floor((self.X_size[1]-4)/2+1)]
+        second_layer_size = [np.floor((first_layer_size[0]-3)/2)+1, np.floor((first_layer_size[1]-3)/2)+1]
         # Up-projection layer
         self.gen_proj_w = getWeight([self.z_size, self.fc_size])
         self.gen_proj_b = getBias([self.fc_size])
         gen_proj = tf.matmul(self.z_sample, self.gen_proj_w) + self.gen_proj_b
         self.z_batch_size=tf.shape(self.z_sample)[0]
-        proj_reshaped = tf.nn.relu(tf.reshape(gen_proj, [self.z_batch_size, 20, 20, 32]))
+        proj_reshaped = tf.nn.relu(tf.reshape(gen_proj, [self.z_batch_size, second_layer_size[0], second_layer_size[1], 32]))
         # Transposed Convolution layer 1
         # Note: conv2d_transpose expects the filter size to be specified
         # as (height, width, OUT_channels, IN_channels)
         self.trans_conv_w_1 = getWeight([3, 3, 64, 32])
         self.trans_conv_b_1 = getBias([64])
-        trans_conv_1 = tf.nn.relu(tf.nn.conv2d_transpose(proj_reshaped, self.trans_conv_w_1, output_shape=[self.z_batch_size, 41, 41, 64], strides=[1, 2, 2, 1], padding='VALID') + self.trans_conv_b_1)
+        trans_conv_1 = tf.nn.relu(tf.nn.conv2d_transpose(proj_reshaped, self.trans_conv_w_1, output_shape=[self.z_batch_size, first_layer_size[0], first_layer_size[1], 64], strides=[1, 2, 2, 1], padding='VALID') + self.trans_conv_b_1)
 
         # Transposed Convolution layer 2
         # Note: conv2d_transpose expects the filter size to be specified
         # as (height, width, OUT_channels, IN_channels)
-        self.trans_conv_w_2 = getWeight([4, 4, 3, 64])
+        self.trans_conv_w_2 = getWeight([4, 4, self.X_size[2], 64])
         self.trans_conv_b_2 = getBias([1])
-        trans_conv_2 = tf.nn.conv2d_transpose(trans_conv_1, self.trans_conv_w_2, output_shape=[self.z_batch_size, 84, 84, 3], strides=[1, 2, 2, 1], padding='VALID')+self.trans_conv_b_2
+        trans_conv_2 = tf.nn.conv2d_transpose(trans_conv_1, self.trans_conv_w_2, output_shape=[self.z_batch_size]+self.X_size, strides=[1, 2, 2, 1], padding='VALID')+self.trans_conv_b_2
 
         # Generated output
         self.output = tf.nn.sigmoid(trans_conv_2)
@@ -127,5 +135,11 @@ class vae(object):
         # between the distribution over z = N(mu(X, Sigma(X)) and 
         # N(0, I) for each element in batch
         self.kl_loss = self.beta*tf.reduce_sum(tf.exp(self.log_Sigma_X_diag) + \
-                                                                 tf.square(self.mu_X) - 1 - self.log_Sigma_X_diag, 1)
+                                                   tf.square(self.mu_X) - 1 - self.log_Sigma_X_diag, 1)
+
+    def train(self, raw_obs_batch, sess):
+        img_batch = raw_obs_preproc_fn(raw_obs_batch)
+        _, loss_val = sess.run([self.train_step, self.total_loss], \
+                               feed_dict={self.X_placeholder: img_batch})
+        return loss_val
 
