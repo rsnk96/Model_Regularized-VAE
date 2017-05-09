@@ -7,6 +7,8 @@ Author: Nathan Sprague
 import logging
 import numpy as np
 import cv2
+import Image
+import tensorflow as tf
 
 import ale_data_set
 
@@ -44,7 +46,7 @@ class ALEExperiment(object):
                                       dtype=np.uint8)
         self.total_steps = 0
         self.vae_trained_steps=0
-        self.vae_req_steps = vae_req_steps
+        self.vae_req_steps = vae_req_steps; print 'Steps required for VAE:',vae_req_steps
         self.vae_storage_size = vae_storage_size
         self.terminal_lol = False # Most recent episode ended on a loss of life
         self.max_start_nullops = max_start_nullops
@@ -152,10 +154,10 @@ class ALEExperiment(object):
             self.vae_trained_steps += 1
             if self.vae_trained_steps % 200 == 0 :
                 print "VAE Training step %d: Loss %f"%(self.vae_trained_steps, loss)
-            if self.vae_trained_steps % 40000 == 0 :
-                saver = tf.train.Saver()
-                os.system('mkdir -p %s/iter_%.6d' % ('vae_temp/', self.vae_trained_steps ))
-                saver.save(sess, '%s/iter_%.6d/checkpoint.ckpt' % ('vae_temp/', self.vae_trained_steps))
+            #if self.vae_trained_steps % 40000 == 0 :
+            #    saver = tf.train.Saver()
+            #    os.system('mkdir -p %s/iter_%.6d' % ('vae_temp/', self.vae_trained_steps ))
+            #    saver.save(sess, '%s/iter_%.6d/checkpoint.ckpt' % ('vae_temp/', self.vae_trained_steps))
 
 
 
@@ -170,11 +172,10 @@ class ALEExperiment(object):
         Return: (terminal, num_steps)
 
         """
-
+        
         self._init_episode()
-
         start_lives = self.ale.lives()
-
+        self.get_observation()
         action = self.agent.start_episode(self.get_observation())
         num_steps = 0
         while True:
@@ -209,11 +210,33 @@ class ALEExperiment(object):
         max_image = np.maximum(self.screen_buffer[index, ...],
                                self.screen_buffer[index - 1, ...])
         obs_frame = self.resize_image(max_image)
-        #obs_frame[obs_frame == 87] = 0
+        obs_frame[obs_frame == 87] = 0
         return obs_frame
         #return self.resize_image(max_image)
 
     def resize_image(self, image):
+        """ Appropriately resize a single image """
+
+        if self.resize_method == 'crop':
+            # resize keeping aspect ratio
+            resize_height = int(round(
+                float(self.height) * self.resized_width / self.width))
+            
+
+            resized = np.array(Image.fromarray(image).resize((self.resized_width, self.resized_height),Image.BILINEAR))
+
+            # Crop the part we want
+            crop_y_cutoff = resize_height - CROP_OFFSET - self.resized_height
+            cropped = resized[crop_y_cutoff:
+                              crop_y_cutoff + self.resized_height, :]
+
+            return cropped
+        elif self.resize_method == 'scale':
+            return np.array(Image.fromarray(image).resize((self.resized_width, self.resized_height),Image.BILINEAR))
+        else:
+            raise ValueError('Unrecognized image resize method.')
+
+    def resize_image_cv2(self, image):
         """ Appropriately resize a single image """
 
         if self.resize_method == 'crop':
