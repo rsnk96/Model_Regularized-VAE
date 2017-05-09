@@ -172,7 +172,7 @@ class ALEExperiment(object):
                 float(self.height) * self.resized_width / self.width))
             
 
-            resized = np.array(Image.fromarray(image).resize((self.resized_width, self.resize_height),Image.BILINEAR))
+            resized = np.array(Image.fromarray(image).resize((self.resized_width, self.resized_height),Image.BILINEAR))
 
             # Crop the part we want
             crop_y_cutoff = resize_height - CROP_OFFSET - self.resized_height
@@ -181,7 +181,7 @@ class ALEExperiment(object):
 
             return cropped
         elif self.resize_method == 'scale':
-            return np.array(Image.fromarray(image).resize((self.resized_width, self.resize_height),Image.BILINEAR))
+            return np.array(Image.fromarray(image).resize((self.resized_width, self.resized_height),Image.BILINEAR))
         else:
             raise ValueError('Unrecognized image resize method.')
 
